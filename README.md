@@ -72,11 +72,3 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 - To use a different LLM/model, change the `MODEL_NAME` in [`backend/api.py`](backend/api.py).
 - To add more database types, update the dropdown in [`frontend/src/App.jsx`](frontend/src/App.jsx).
-
-## License
-
-MIT License
-
----
-
-*Craft your database with the precision of Michelangelo# DataAngelo
