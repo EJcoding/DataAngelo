@@ -150,7 +150,7 @@ const App = () => {
             <h1>DataAngelo</h1>
           </div>
           <p className="header-subtitle">
-            Describe your application and sculpt your database with SQL queries, visual diagrams, and explanations
+            Design and sculpt your database schema with Michaelangelo of data
           </p>
         </header>
 
