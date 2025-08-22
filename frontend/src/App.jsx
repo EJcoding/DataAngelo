@@ -1,3 +1,6 @@
+// cd frontend
+// npm run dev
+
 import React, { useState, useEffect } from 'react';
 import { Copy, Database, Zap, FileText, Loader2, CheckCircle } from 'lucide-react';
 import './App.css';
@@ -7,7 +10,7 @@ const App = () => {
     description: '',
     database_type: 'MySQL'
   });
-
+  
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
@@ -17,17 +20,17 @@ const App = () => {
     {
       title: "E-commerce Platform",
       description: "Users, products, orders, shopping cart, payments",
-      prompt: "I want a database for an e-commerce site with customers, orders, and products..."
+      prompt: "I want a database for an e-commerce site with customers, orders, and products. Customers can place multiple orders, and each order can contain multiple products. I also need to track inventory, shipping addresses, and payment information."
     },
     {
       title: "Library Management",
       description: "Books, authors, members, borrowing system",
-      prompt: "Design a database for a library management system..."
+      prompt: "Design a database for a library management system. I need to track books, authors, library members, and borrowing records. Books can have multiple authors, and members can borrow multiple books with due dates."
     },
     {
       title: "Task Management",
       description: "Projects, tasks, team members, deadlines",
-      prompt: "Create a database for a task management application..."
+      prompt: "Create a database for a task management application. I need projects, tasks within projects, team members, and task assignments. Tasks should have priorities, deadlines, and status tracking."
     }
   ];
 
@@ -37,6 +40,7 @@ const App = () => {
 
   const handleSubmit = async () => {
     if (!formData.description.trim()) return;
+    
     setIsLoading(true);
     setError('');
     setResults(null);
@@ -44,11 +48,16 @@ const App = () => {
     try {
       const response = await fetch('http://localhost:8000/design-database', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(formData)
       });
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const result = await response.json();
       setResults(result);
     } catch (err) {
@@ -62,7 +71,9 @@ const App = () => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedStates({ ...copiedStates, [key]: true });
-      setTimeout(() => setCopiedStates({ ...copiedStates, [key]: false }), 2000);
+      setTimeout(() => {
+        setCopiedStates({ ...copiedStates, [key]: false });
+      }, 2000);
     } catch (err) {
       console.error('Failed to copy: ', err);
     }
@@ -71,27 +82,60 @@ const App = () => {
   const MermaidDiagram = ({ code }) => {
     useEffect(() => {
       if (typeof window !== 'undefined' && window.mermaid && code) {
-        window.mermaid.initialize({ startOnLoad: false });
+        window.mermaid.initialize({ 
+          startOnLoad: false,
+          theme: 'default',
+          themeVariables: {
+            primaryColor: '#3b82f6',
+            primaryTextColor: '#1f2937',
+            primaryBorderColor: '#d1d5db',
+            lineColor: '#6b7280'
+          }
+        });
+
         const renderDiagram = async () => {
           try {
             const { svg } = await window.mermaid.render('mermaid-diagram', code);
             const diagramElement = document.getElementById('diagram-container');
-            if (diagramElement) diagramElement.innerHTML = svg;
+            if (diagramElement) {
+              diagramElement.innerHTML = svg;
+            }
           } catch (err) {
             console.error('Mermaid rendering error:', err);
+            const diagramElement = document.getElementById('diagram-container');
+            if (diagramElement) {
+              diagramElement.innerHTML = `
+                <div class="diagram-error">
+                  <p class="error-title">Diagram rendering failed</p>
+                  <pre class="error-code">${code}</pre>
+                </div>
+              `;
+            }
           }
         };
+
         renderDiagram();
       }
     }, [code]);
 
-    return <div id="diagram-container" className="diagram-container"></div>;
+    return (
+      <div id="diagram-container" className="diagram-container">
+        <div className="diagram-loading">
+          <Loader2 className="loading-spinner" />
+          <p>Rendering diagram...</p>
+        </div>
+      </div>
+    );
   };
 
   useEffect(() => {
+    // Load Mermaid script
     if (typeof window !== 'undefined' && !window.mermaid) {
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js';
+      script.onload = () => {
+        console.log('Mermaid loaded');
+      };
       document.head.appendChild(script);
     }
   }, []);
@@ -105,98 +149,178 @@ const App = () => {
             <Database className="header-icon" />
             <h1>DataAngelo</h1>
           </div>
-          <p>Design and sculpt your database schema with AI Michaelangelo</p>
+          <p className="header-subtitle">
+            Describe your application and sculpt your database with SQL queries, visual diagrams, and explanations
+          </p>
         </header>
 
         {/* Input Section */}
-        <div className="card">
-          <div className="form-group">
-            <label htmlFor="description">Describe your application or database needs:</label>
-            <textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Example: I want a database for an e-commerce site with customers, orders, and products. Customers can place multiple orders, and each order can contain multiple products..."
-            />
-          </div>
+        <div className="input-section">
+          <div className="form-container">
+            <div className="form-group">
+              <label htmlFor="description" className="form-label">
+                Describe your application or database needs:
+              </label>
+              <textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="form-textarea"
+                placeholder="Example: I want a database for an e-commerce site with customers, orders, and products. Customers can place multiple orders, and each order can contain multiple products..."
+              />
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="database_type">Database Type:</label>
-            <select
-              id="database_type"
-              value={formData.database_type}
-              onChange={(e) => setFormData({ ...formData, database_type: e.target.value })}
+            <div className="form-group">
+              <label htmlFor="database_type" className="form-label">
+                Database Type:
+              </label>
+              <select
+                id="database_type"
+                value={formData.database_type}
+                onChange={(e) => setFormData({ ...formData, database_type: e.target.value })}
+                className="form-select"
+              >
+                <option value="MySQL">MySQL</option>
+                <option value="PostgreSQL">PostgreSQL</option>
+                <option value="SQLite">SQLite</option>
+                <option value="SQL Server">SQL Server</option>
+              </select>
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || !formData.description.trim()}
+              className={`submit-button ${isLoading ? 'loading' : ''}`}
             >
-              <option value="MySQL">MySQL</option>
-              <option value="PostgreSQL">PostgreSQL</option>
-              <option value="SQLite">SQLite</option>
-              <option value="SQL Server">SQL Server</option>
-            </select>
+              {isLoading ? (
+                <>
+                  <Loader2 className="button-icon animate-spin" />
+                  Generating Design...
+                </>
+              ) : (
+                <>
+                  <Zap className="button-icon" />
+                  Generate Database Design
+                </>
+              )}
+            </button>
           </div>
 
-          <button onClick={handleSubmit} disabled={isLoading || !formData.description.trim()}>
-            {isLoading ? (
-              <>
-                <Loader2 className="loading-icon" />
-                Generating Design...
-              </>
-            ) : (
-              <>
-                <Zap className="loading-icon" />
-                Generate Database Design
-              </>
-            )}
-          </button>
-
+          {/* Example Prompts */}
           <div className="examples-section">
-            <h3>Try these examples:</h3>
-            <div className="examples">
+            <h3 className="examples-title">Try these examples:</h3>
+            <div className="examples-grid">
               {examples.map((example, index) => (
-                <div key={index} onClick={() => fillExample(example)} className="example-card">
-                  <h4>{example.title}</h4>
-                  <p>{example.description}</p>
+                <div
+                  key={index}
+                  onClick={() => fillExample(example)}
+                  className="example-card"
+                >
+                  <h4 className="example-title">{example.title}</h4>
+                  <p className="example-description">{example.description}</p>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="loading-section">
+            <Loader2 className="loading-icon" />
+            <p className="loading-text">AI is designing your database schema...</p>
+            <p className="loading-subtext">This may take 30-60 seconds.</p>
+          </div>
+        )}
+
         {/* Error State */}
         {error && (
-          <div className="error-box">
-            <h3>Error</h3>
-            <p>{error}</p>
+          <div className="error-section">
+            <div className="error-content">
+              <h3 className="error-title">Error</h3>
+              <p className="error-message">{error}</p>
+            </div>
           </div>
         )}
 
         {/* Results */}
         {results && (
-          <div className="results">
-            <div className="card">
-              <div className="card-header">
-                <h3>SQL Code</h3>
-                <button onClick={() => copyToClipboard(results.sql_queries, 'sql')}>
-                  {copiedStates.sql ? "Copied!" : "Copy SQL"}
+          <div className="results-section">
+            {/* SQL Section */}
+            <div className="result-card">
+              <div className="result-header">
+                <div className="result-title">
+                  <Database className="result-icon" />
+                  <h3>SQL Code</h3>
+                </div>
+                <button
+                  onClick={() => copyToClipboard(results.sql_queries, 'sql')}
+                  className={`copy-button ${copiedStates.sql ? 'copied' : ''}`}
+                >
+                  {copiedStates.sql ? (
+                    <>
+                      <CheckCircle className="button-icon" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="button-icon" />
+                      Copy SQL
+                    </>
+                  )}
                 </button>
               </div>
-              <pre><code>{results.sql_queries}</code></pre>
+              <div className="result-content">
+                <pre className="sql-code">
+                  <code>{results.sql_queries}</code>
+                </pre>
+              </div>
             </div>
 
-            <div className="card">
-              <div className="card-header">
-                <h3>Visual Diagram</h3>
-                <button onClick={() => copyToClipboard(results.erd_mermaid, 'mermaid')}>
-                  {copiedStates.mermaid ? "Copied!" : "Copy Diagram Code"}
+            {/* Diagram Section */}
+            <div className="result-card">
+              <div className="result-header">
+                <div className="result-title">
+                  <svg className="result-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <h3>Visual Diagram</h3>
+                </div>
+                <button
+                  onClick={() => copyToClipboard(results.erd_mermaid, 'mermaid')}
+                  className={`copy-button ${copiedStates.mermaid ? 'copied' : ''}`}
+                >
+                  {copiedStates.mermaid ? (
+                    <>
+                      <CheckCircle className="button-icon" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="button-icon" />
+                      Copy Diagram Code
+                    </>
+                  )}
                 </button>
               </div>
-              <MermaidDiagram code={results.erd_mermaid} />
+              <div className="result-content">
+                <MermaidDiagram code={results.erd_mermaid} />
+              </div>
             </div>
 
-            <div className="card">
-              <div className="card-header">
-                <h3>Design Explanation</h3>
+            {/* Explanation Section */}
+            <div className="result-card">
+              <div className="result-header">
+                <div className="result-title">
+                  <FileText className="result-icon" />
+                  <h3>Design Explanation</h3>
+                </div>
               </div>
-              <p className="explanation">{results.explanation}</p>
+              <div className="result-content">
+                <div className="explanation-content">
+                  {results.explanation}
+                </div>
+              </div>
             </div>
           </div>
         )}
